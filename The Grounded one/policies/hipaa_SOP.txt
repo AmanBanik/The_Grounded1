@@ -1,0 +1,277 @@
+================================================================================
+HIPAA-COMPLIANT STANDARD OPERATING PROCEDURES (SOP)
+Medical Record Access Policy
+================================================================================
+
+VERSION: 1.0
+EFFECTIVE DATE: 2025-11-16
+LAST UPDATED: 2025-11-16
+
+================================================================================
+SECTION 1: MANDATORY ACCESS SEQUENCE
+================================================================================
+
+All access to patient medical records MUST follow this exact sequence:
+
+STEP 1: VERIFY CLINICIAN CREDENTIALS
+   - Tool: verify_clinician_credentials(clinician_id)
+   - Purpose: Confirm the requesting clinician is authorized
+   - Requirements:
+     * Clinician must exist in system
+     * Clinician must have active status
+     * Clinician must have valid license
+   - On Failure: STOP - Do not proceed to next step
+
+STEP 2: CHECK PATIENT CONSENT STATUS
+   - Tool: check_patient_consent_status(patient_id, clinician_id)
+   - Purpose: Verify patient has granted consent for this clinician
+   - Requirements:
+     * Consent record must exist
+     * Consent must be in "active" status
+     * Consent must not be expired
+     * Consent scope must allow requested access type
+   - On Failure: STOP - Do not proceed to next step
+
+STEP 3: FETCH PATIENT RECORD
+   - Tool: fetch_patient_record(patient_id)
+   - Purpose: Retrieve the requested medical information
+   - Requirements:
+     * Only proceed if Steps 1 and 2 succeeded
+     * Patient must exist in database
+     * Return only authorized data based on consent scope
+   - On Failure: Log and report error
+
+STEP 4: LOG ACCESS TO AUDIT TRAIL
+   - Tool: log_access_to_audit_trail(clinician_id, patient_id, action, success)
+   - Purpose: Record all access attempts for compliance
+   - Requirements:
+     * MUST be called for EVERY access attempt
+     * MUST be called even if previous steps failed
+     * MUST include success/failure status
+     * MUST include session token
+   - On Failure: CRITICAL ERROR - Escalate immediately
+
+================================================================================
+SECTION 2: PROHIBITED ACTIONS
+================================================================================
+
+The following actions are STRICTLY PROHIBITED:
+
+1. SKIPPING STEPS
+   - Never skip credential verification
+   - Never skip consent checking
+   - Never skip audit logging
+
+2. OUT-OF-ORDER EXECUTION
+   - Steps must be executed in exact order: 1 → 2 → 3 → 4
+   - Cannot fetch records before verifying credentials
+   - Cannot check consent before verifying credentials
+
+3. UNAUTHORIZED DATA ACCESS
+   - No bulk data retrieval (must specify patient_id)
+   - No access to patients without explicit consent
+   - No access using inactive clinician accounts
+
+4. MISSING AUDIT LOGS
+   - Every access attempt MUST be logged
+   - Failed attempts MUST be logged
+   - Unauthorized attempts MUST be logged
+
+5. CONSENT VIOLATIONS
+   - No access with expired consent
+   - No access with revoked consent
+   - No access beyond consent scope
+
+================================================================================
+SECTION 3: RECORD MODIFICATION POLICY
+================================================================================
+
+When APPENDING to patient records:
+
+REQUIRED SEQUENCE:
+1. verify_clinician_credentials(clinician_id)
+2. check_patient_consent_status(patient_id, clinician_id)
+3. record_appender(patient_id, clinician_id, note, note_type)
+4. log_access_to_audit_trail(clinician_id, patient_id, "append_record", success)
+
+ADDITIONAL REQUIREMENTS:
+- Notes must include clinician ID and timestamp
+- Notes must specify note_type (diagnosis, prescription, etc.)
+- Original records must never be deleted or modified
+- All changes must be additive only
+
+================================================================================
+SECTION 4: EMERGENCY ACCESS OVERRIDE
+================================================================================
+
+EMERGENCY SITUATIONS:
+In life-threatening emergencies, the following abbreviated sequence is allowed:
+
+1. verify_clinician_credentials(clinician_id)
+2. fetch_patient_record(patient_id)
+3. log_access_to_audit_trail(...) with flag: emergency=true
+
+EMERGENCY CRITERIA:
+- Immediate threat to life
+- Patient unable to provide consent
+- Time-critical medical intervention required
+
+POST-EMERGENCY REQUIREMENTS:
+- Emergency access must be documented within 24 hours
+- Supervisor review required within 48 hours
+- Patient must be notified when stable
+
+================================================================================
+SECTION 5: CONSENT SCOPE INTERPRETATION
+================================================================================
+
+CONSENT SCOPES:
+
+1. full_access
+   - All medical records accessible
+   - Can append notes
+   - Can generate reports
+   - Can view complete history
+
+2. limited_access
+   - Only specific sections accessible
+   - Cannot view sensitive notes
+   - Cannot modify records
+   - Read-only access
+
+3. emergency_only
+   - Access only during documented emergencies
+   - Limited to critical information
+   - Requires post-access review
+
+4. consultation_only
+   - View-only access for specialist consultation
+   - Cannot modify records
+   - Limited to relevant medical history
+
+================================================================================
+SECTION 6: AUDIT TRAIL REQUIREMENTS
+================================================================================
+
+EVERY audit log entry MUST include:
+
+REQUIRED FIELDS:
+- timestamp: ISO 8601 format
+- clinician_id: Requesting clinician
+- patient_id: Target patient
+- action: Specific action performed
+- success: Boolean success status
+- token_id: Unique session token
+
+OPTIONAL BUT RECOMMENDED:
+- clinician_name: For readability
+- patient_name: For readability
+- details: Additional context
+- error_message: If failed
+
+RETENTION POLICY:
+- Audit logs must be retained for minimum 7 years
+- Logs must be tamper-proof
+- Logs must be encrypted at rest
+
+================================================================================
+SECTION 7: VIOLATION HANDLING
+================================================================================
+
+WHEN POLICY VIOLATIONS ARE DETECTED:
+
+IMMEDIATE ACTIONS:
+1. STOP the current operation
+2. LOG the violation with full context
+3. DO NOT proceed with the requested action
+4. NOTIFY the requesting user of the violation
+
+VIOLATION TYPES:
+
+LEVEL 1 - WARNING:
+- Minor sequencing issues
+- Missing optional parameters
+- Allow retry after correction
+
+LEVEL 2 - ERROR:
+- Skipped mandatory steps
+- Out-of-order execution
+- Block action, require manual review
+
+LEVEL 3 - CRITICAL:
+- Unauthorized access attempt
+- Consent violation
+- Missing audit log
+- Immediate escalation to security team
+
+RETRY POLICY:
+- User must be informed of the violation
+- User must explicitly consent to retry
+- Corrected request must be validated
+- All retry attempts must be logged
+
+================================================================================
+SECTION 8: DATA MINIMIZATION
+================================================================================
+
+PRINCIPLE:
+Access only the minimum necessary data to accomplish the clinical task.
+
+IMPLEMENTATION:
+- Use field filtering when possible (fetch specific fields only)
+- Use summary functions for quick overviews
+- Avoid bulk data retrieval
+- Request specific patient records, not entire databases
+
+EXAMPLES:
+- Good: fetch_patient_vitals(patient_id)
+- Bad: fetch_all_patients()
+- Good: fetch_record(patient_id, fields=["vitals", "medications"])
+- Bad: fetch_record(patient_id) when only vitals needed
+
+================================================================================
+SECTION 9: REPORTING REQUIREMENTS
+================================================================================
+
+PDF REPORT GENERATION:
+
+REQUIREMENTS:
+1. verify_clinician_credentials(clinician_id)
+2. check_patient_consent_status(patient_id, clinician_id)
+3. pdf_generator(patient_id, clinician_id)
+4. log_access_to_audit_trail(..., action="generate_report")
+
+REPORT SECURITY:
+- Reports must be marked CONFIDENTIAL
+- Reports must include HIPAA disclaimer
+- Reports must include generation timestamp
+- Reports must include requesting clinician info
+
+================================================================================
+SECTION 10: POLICY UPDATES
+================================================================================
+
+MODIFICATION PROCESS:
+- Policy changes require administrative approval
+- All changes must be versioned
+- Affected users must be notified
+- Training must be provided for significant changes
+
+UPDATE FREQUENCY:
+- Annual review mandatory
+- Immediate review after any security incident
+- Review after regulatory changes
+
+================================================================================
+END OF HIPAA SOP DOCUMENT
+================================================================================
+
+For questions or clarifications, contact:
+- Compliance Officer: compliance@hospital.com
+- Security Team: security@hospital.com
+- HIPAA Privacy Officer: privacy@hospital.com
+
+REMEMBER: Patient privacy and data security are paramount. 
+When in doubt, err on the side of caution.
+
+================================================================================
