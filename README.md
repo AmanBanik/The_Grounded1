@@ -35,7 +35,7 @@ Key capabilities:
 ## 🏗️ Architecture
 The system uses a native Python implementation (no heavy frameworks) to maximize speed and control.
 
-```mermaid
+```
 graph TD
     User[User / Admin] --> Main[main.py / admin_cli.py]
     Main --> Root[Root Agent<br>(Gemini 2.0 Flash)]
