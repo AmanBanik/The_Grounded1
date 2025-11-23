@@ -41,7 +41,7 @@ graph TD
     Main --> Root[Root Agent<br>(Gemini 2.0 Flash)]
 
     subgraph "The Safety Layer"
-    Filter[Filter Agent<br>(Gemini 2.5 Pro)]
+    Filter[Filter Agent(Gemini 2.5 Pro)]
     end
 
     Root <--> Filter
@@ -53,7 +53,7 @@ graph TD
     Root --> T5[Audit Log]
     Root --> T6[Record Appender]
     Root --> T7[PDF Generator]
-    Root --> T8[Report Summarizer<br>(Gemini 2.5 Flash)]
+    Root --> T8[Report Summarizer(Gemini 2.5 Flash)]
 ```
 
 ---
@@ -93,12 +93,14 @@ Eight lightweight Python modules handling operational tasks such as:
 ---
 
 ## 🚀 Quick Start
-### 1. Install Dependencies
+### 1. Fix `config.py`
+The config file given here is a template and not the exact one just rename the fine name from `config_template.py` to `config.py` within `The Grounded one/`
+### 2. Install Dependencies
 ```bash
 pip install google-generativeai reportlab pillow
 ```
 
-### 2. Setup
+### 3. Setup
 ```bash
 git clone <your-repo-url>
 cd "The Grounded one"
@@ -114,7 +116,7 @@ Generate mock data:
 python generate_mock_data.py
 ```
 
-### 3. Run
+### 4. Run
 **User Mode:**
 ```bash
 python main.py
@@ -124,7 +126,7 @@ python main.py
 ```bash
 python admin_cli.py
 ```
-Password: `hipaa_admin_2025`
+Password: `hipaa_admin_2025` default set can be changes in `config.py`
 
 ---
 
@@ -248,7 +250,7 @@ Policies can be updated through:
 - **API Calls**: 2-3 per user request (Root planning + Filter validation)
 - **Accuracy**: 100% policy compliance (by design)
 - **False Positives**: Minimal (AI understands context)
-- **Fixed delay**: For filter agent a delay subtle delay between each request has been added to preventexceeding limit for 2.5 pro model
+- **Fixed delay**: Added request throttling to the Filter Agent to avoid hitting 2.5 Pro usage limits
 
 ---
 ## 🎯 Kaggle Submission Notes
@@ -287,7 +289,7 @@ This is a hackathon submission, but improvements welcome!
 
 ## 📝 License
 
-MIT License - See LICENSE file for details
+MIT License - See [LICENSE](/LICENCE) file for details
 
 ---
 
