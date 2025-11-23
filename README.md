@@ -312,9 +312,9 @@ MIT License - See [LICENSE](/LICENCE) file for details
 
 For questions about this submission:
 - [Kaggle Profile](https://www.kaggle.com/amanbanik)
-- [Email](amanbaniksr75@gmail.com)
+- [Email](mailto:amanbaniksr75@gmail.com)
 - [GitHub](https://github.com/AmanBanik)
-- [Linkedin](www.linkedin.com/in/aman-banik-9a6a87308)
+- [Linkedin](https://www.linkedin.com/in/aman-banik-9a6a87308)
 
 ---
 
