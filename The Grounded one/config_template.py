@@ -46,7 +46,7 @@ print("✅ Gemini API key loaded successfully.")
 # Model selection
 ROOT_AGENT_MODEL = "gemini-2.0-flash"  # Fast orchestration
 FILTER_AGENT_MODEL = "gemini-2.5-pro"  # Deep reasoning for policy validation
-TOOL_AGENT_MODEL = "gemini-2.0-flash"  # For summarizer tool
+TOOL_AGENT_MODEL = "gemini-2.5-flash"  # For summarizer tool
 
 # Retry configuration for API calls
 RETRY_ATTEMPTS = 5
