@@ -172,7 +172,7 @@ def generate_patients(num_patients):
                 "conditions": conditions,
                 "medications": medications,
                 "allergies": random.sample(["Penicillin", "Peanuts", "Latex", "Shellfish", "None"], 
-                                          random.randint(0, 2))
+                                        random.randint(0, 2))
             },
             "vitals": vitals,
             "last_visit": random_date(365, 0),  # Within last year
@@ -196,6 +196,50 @@ def generate_consent_records(num_records, num_patients, num_clinicians):
     """Generate mock consent records"""
     consent_records = []
     
+    # --- ADDED: 3 Guaranteed Negative Test Cases ---
+
+    # Negative Test 1: Revoked Consent
+    # (PT_0001 and DR_0002 will have a 'revoked' record)
+    consent_records.append({
+        "consent_id": "CNS_NEG_REVOKED",
+        "patient_id": "PT_0001",
+        "clinician_id": "DR_0002",
+        "status": "revoked",
+        "granted_date": random_date(730, 60),
+        "expiry_date": random_date(30, 1),
+        "scope": "full_access",
+        "purpose": "Ongoing treatment"
+    })
+
+    # Negative Test 2: Expired Consent
+    # (PT_0002 and DR_0003 will have an 'expired' record)
+    consent_records.append({
+        "consent_id": "CNS_NEG_EXPIRED",
+        "patient_id": "PT_0002",
+        "clinician_id": "DR_0003",
+        "status": "expired",
+        "granted_date": random_date(730, 400),
+        "expiry_date": random_date(365, 30), # Expired between 1 month and 1 year ago
+        "scope": "emergency_only",
+        "purpose": "Emergency care"
+    })
+
+    # Negative Test 3: Future-Dated Consent (Not yet valid)
+    # (PT_0003 and DR_0004 will have an 'active' record that starts in the future)
+    future_start = (datetime.now() + timedelta(days=10)).strftime("%Y-%m-%d")
+    future_end = (datetime.now() + timedelta(days=375)).strftime("%Y-%m-%d")
+    consent_records.append({
+        "consent_id": "CNS_NEG_FUTURE",
+        "patient_id": "PT_0003",
+        "clinician_id": "DR_0004",
+        "status": "active", # Status is active, but dates are invalid for today
+        "granted_date": future_start, 
+        "expiry_date": future_end,
+        "scope": "consultation_only",
+        "purpose": "Consultation"
+    })
+    # --- END ADDED TEST CASES ---
+
     for i in range(num_records):
         patient_id = generate_id("PT", random.randint(1, num_patients))
         clinician_id = generate_id("DR", random.randint(1, num_clinicians))
