@@ -289,8 +289,22 @@ EXAMPLES:
                 # 3. Patient Record Access Output (if it returns data)
                 elif 'patient_id' in tool_output and 'full_name' in tool_output:
                      print(f"\n👤 Patient Record Accessed: {tool_output['full_name']} ({tool_output['patient_id']})")
-                     # Optional: Print a snippet if you want
-                     # print(json.dumps(tool_output, indent=2))
+                     
+                     # Check if specific data fields were requested and returned
+                     if 'vitals' in tool_output:
+                         print("\n🩺 Vitals Data:")
+                         print(json.dumps(tool_output['vitals'], indent=2))
+                     elif 'medical_history' in tool_output:
+                         print("\n📜 Medical History:")
+                         print(json.dumps(tool_output['medical_history'], indent=2))
+                     # Add other specific fields here if needed
+                     else:
+                         # If no specific sub-field is present, it might be a full record fetch.
+                         # You can choose to print a snippet or the whole thing.
+                         print("\n📄 Full Record Snippet:")
+                         # Print first few keys as a snippet
+                         snippet = {k: tool_output[k] for k in list(tool_output.keys())[:5]}
+                         print(json.dumps(snippet, indent=2) + "\n...")
                      
                 # 4. General Message Fallback
                 elif 'message' in tool_output:
