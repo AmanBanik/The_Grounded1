@@ -5,6 +5,7 @@ THIS IS THE ONLY TOOL THAT USES THE GEMINI API
 """
 
 import sys
+import json
 from pathlib import Path
 from typing import Dict, Optional, List
 
@@ -68,42 +69,9 @@ def summarize_patient_report(
                 "error": f"Patient {patient_id} not found"
             }
         
-        # Prepare data based on summary type
-        if summary_type == "vitals_only":
-            data_to_summarize = {
-                "patient_name": patient.get("full_name"),
-                "vitals": patient.get("vitals", {})
-            }
-            prompt_focus = "Focus on analyzing the vital signs and provide clinical insights."
-        
-        elif summary_type == "history_only":
-            data_to_summarize = {
-                "patient_name": patient.get("full_name"),
-                "medical_history": patient.get("medical_history", {})
-            }
-            prompt_focus = "Focus on medical history, conditions, medications, and allergies."
-        
-        elif summary_type == "recent_notes":
-            notes = patient.get("notes", [])
-            recent_notes = notes[-5:] if len(notes) > 5 else notes
-            data_to_summarize = {
-                "patient_name": patient.get("full_name"),
-                "recent_notes": recent_notes
-            }
-            prompt_focus = "Focus on summarizing recent clinical notes and treatment progression."
-        
-        else:  # comprehensive
-            data_to_summarize = {
-                "patient_name": patient.get("full_name"),
-                "age": patient.get("date_of_birth"),
-                "gender": patient.get("gender"),
-                "blood_type": patient.get("blood_type"),
-                "vitals": patient.get("vitals", {}),
-                "medical_history": patient.get("medical_history", {}),
-                "recent_notes": patient.get("notes", [])[-3:]
-            }
-            prompt_focus = "Provide a comprehensive overview of the patient's health status."
-        
+        # Convert patient data to a clean JSON string for the prompt
+        data_str = json.dumps(patient, indent=2)
+
         # Set length parameters
         length_params = {
             "short": {"words": "100-150", "bullets": "3-5"},
@@ -111,42 +79,50 @@ def summarize_patient_report(
             "long": {"words": "400-500", "bullets": "8-10"}
         }
         length_spec = length_params.get(max_length, length_params["medium"])
-        
-        # Construct prompt
-        prompt = f"""You are a medical AI assistant helping to summarize patient records for healthcare professionals.
 
-Patient Data:
-{data_to_summarize}
+        # Determine technical data extraction parameters based on type
+        if summary_type == 'comprehensive':
+            extraction_targets = "Extract and condense: demographics data, medical history array, latest entry in vitals object, latest entry in notes array."
+        elif summary_type == 'vitals_only':
+            extraction_targets = "Extract and condense ONLY: vitals object data. Ignore all other arrays."
+        elif summary_type == 'recent_notes':
+            extraction_targets = "Extract and condense ONLY: last 3 entries in notes array."
+        elif summary_type == 'handoff': # handoff/history_only
+            extraction_targets = "Extract and condense: active conditions from medical history, allergies, latest note plan."
+        else:
+             extraction_targets = "Condense available JSON data."
 
-Task: {prompt_focus}
+        # THE ULTRA-BORING, MECHANICAL PROMPT
+        # This replaces the previous "medical AI assistant" prompt construction.
+        prompt = f"""Perform a data condensation task on the provided input structure.
 
-Requirements:
-1. Create a {max_length}-length summary ({length_spec['words']} words)
-2. Use bullet points ({length_spec['bullets']} key points)
-3. Highlight any concerning findings or trends
-4. Use medical terminology appropriately
-5. Be objective and factual
-6. DO NOT make diagnoses or treatment recommendations
-7. Note any missing or incomplete information
+INPUT DATA (JSON format):
+{data_str}
 
-Format your response as:
-**Summary:**
-[Brief overview paragraph]
+DATA EXTRACTION REQUIREMENTS:
+{extraction_targets}
 
-**Key Findings:**
-• [Bullet point 1]
-• [Bullet point 2]
-• [etc.]
+OUTPUT CONSTRAINTS:
+1. Max length: {length_spec['words']} words.
+2. Required elements: {length_spec['bullets']} bullet points containing extracted text fields.
+3. Constraint: Do not generate text not present in input data.
+4. Constraint: Do not interpret data or provide recommendations.
 
-**Clinical Notes:**
-[Any important observations or concerns]
+REQUIRED OUTPUT SCHEMA:
+Summary:
+[Condensed text paragraph]
+
+Extracted Data Points:
+• [Point 1]
+• [Point 2]
+• [etc]
 """
 
         # Create Gemini model
         model = genai.GenerativeModel(
             model_name=config.TOOL_AGENT_MODEL,
             generation_config={
-                "temperature": 0.3,  # Lower temperature for factual summaries
+                "temperature": 0.5,  # Lower temperature for factual summaries
                 "top_p": 0.8,
                 "top_k": 40,
                 "max_output_tokens": 1000,
@@ -154,6 +130,8 @@ Format your response as:
         )
         
         # Define safety settings to prevent blocking on medical content
+        # We set all blocking thresholds to BLOCK_NONE to prevent the model from
+        # incorrectly flagging medical terminology as harmful.
         safety_settings = {
             HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
             HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
@@ -162,11 +140,6 @@ Format your response as:
         }
         
         # Generate summary with safety settings
-        # response = model.generate_content(
-        #     prompt,
-        #     request_options={"retry": config.get_retry_config()}
-        # )
-        
         response = model.generate_content(
             prompt,
             safety_settings=safety_settings
@@ -209,7 +182,7 @@ def summarize_for_handoff(patient_id: str) -> Dict:
     """
     return summarize_patient_report(
         patient_id=patient_id,
-        summary_type="comprehensive",
+        summary_type="handoff",
         max_length="short"
     )
 
