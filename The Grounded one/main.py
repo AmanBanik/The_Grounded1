@@ -6,6 +6,7 @@ Entry point for HIPAA-Compliant Medical Record Access System
 import sys
 import argparse
 from pathlib import Path
+import json
 
 import config
 import utils
@@ -258,13 +259,45 @@ EXAMPLES:
         self._display_result(result)
     
     def _display_result(self, result: dict):
-        """Display execution result"""
+        """Display execution result and tool output"""
         print("\n" + "="*60)
         print("EXECUTION RESULT")
         print("="*60 + "\n")
         
         if result.get("success"):
             utils.print_success("Request completed successfully!")
+            
+            # --- DISPLAY TOOL OUTPUT ---
+            # The 'data' key holds the return value from the last tool in the sequence
+            tool_output = result.get("data")
+            
+            if tool_output and isinstance(tool_output, dict):
+                # Check for specific tool output keys based on your tool definitions
+                
+                # 1. Report Summarizer Output
+                if 'summary' in tool_output:
+                    print("\n" + "-"*40)
+                    print("📄 PATIENT SUMMARY")
+                    print("-"*40)
+                    print(tool_output['summary'].strip())
+                    print("-"*40)
+                    
+                # 2. PDF Generator Output
+                elif 'pdf_path' in tool_output:
+                     print(f"\n📄 Report generated successfully: {tool_output['pdf_path']}")
+
+                # 3. Patient Record Access Output (if it returns data)
+                elif 'patient_id' in tool_output and 'full_name' in tool_output:
+                     print(f"\n👤 Patient Record Accessed: {tool_output['full_name']} ({tool_output['patient_id']})")
+                     # Optional: Print a snippet if you want
+                     # print(json.dumps(tool_output, indent=2))
+                     
+                # 4. General Message Fallback
+                elif 'message' in tool_output:
+                     print(f"\nℹ️  Tool Output: {tool_output['message']}")
+
+            # --- END TOOL OUTPUT DISPLAY ---
+
         else:
             utils.print_error(f"Request failed: {result.get('error', 'Unknown error')}")
         
@@ -274,14 +307,14 @@ EXAMPLES:
         if result.get("violation_info"):
             violation = result["violation_info"]
             utils.print_warning(f"Policy Violation: {violation.get('violation_type')}")
-            print(f"   Severity: {violation.get('severity')}")
-            print(f"   Explanation: {violation.get('explanation')}")
+            print(f"  Severity: {violation.get('severity')}")
+            print(f"  Explanation: {violation.get('explanation')}")
         
         # Show executed steps
         if result.get("executed_sequence"):
             print(f"\n📝 Executed Steps:")
             for i, step in enumerate(result["executed_sequence"], 1):
-                print(f"   {i}. {step.get('tool', 'Unknown')}")
+                print(f"  {i}. {step.get('tool', 'Unknown')}")
         
         print()
     
