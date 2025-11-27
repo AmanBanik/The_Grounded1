@@ -14,6 +14,7 @@ import config
 import utils
 
 # Gemini API imports
+from google.generativeai.types import HarmCategory, HarmBlockThreshold # API filter blocks
 try:
     from google.genai import types
     import google.generativeai as genai
@@ -152,16 +153,37 @@ Format your response as:
             }
         )
         
-        # Generate summary
+        # Define safety settings to prevent blocking on medical content
+        safety_settings = {
+            HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+        }
+        
+        # Generate summary with safety settings
         # response = model.generate_content(
         #     prompt,
         #     request_options={"retry": config.get_retry_config()}
         # )
         
-        response = model.generate_content(prompt)  # ✅ Simple and works
-        # Extract summary text
-        summary_text = response.text
+        response = model.generate_content(
+            prompt,
+            safety_settings=safety_settings
+        )
         
+        # Extract summary text with error handling for blocked responses
+        try:
+            summary_text = response.text
+        except ValueError as e:
+            # Handle cases where the model blocked the response
+            error_msg = f"AI summarization blocked by safety filters. Block reason: {response.prompt_feedback.block_reason}"
+            utils.logger.warning(error_msg)
+            return {
+                "success": False,
+                "error": error_msg
+            }
+            
         return {
             "success": True,
             "patient_id": patient_id,
