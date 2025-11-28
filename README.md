@@ -281,6 +281,7 @@ This is a hackathon submission, but improvements welcome!
 - [ ] Add more specialized medical tools
 - [ ] Improve NLP handling
 - [ ] Improve Prompt construction to prevent API blocks(like block 0/ 2)
+- [ ] Improve the Intelligent retry mechanics 
 - [ ] Implement role-based access control (RBAC)
 - [ ] Add multi-language support
 - [ ] Integrate with real EHR systems (with proper security)
