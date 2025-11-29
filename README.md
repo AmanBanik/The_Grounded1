@@ -305,7 +305,7 @@ MIT License - See [LICENSE](/LICENCE) file for details
 ## 🙏 Acknowledgments
 
 - Google Gemini API for powerful AI capabilities
-- Google Agent Development Kit(took inspiration to develope native agents), powerfull tool for creating simple to multi-modal agents
+- Google Agent Development Kit (took inspiration to develope native agents), powerfull tool for creating simple to multi-modal agents
 - Anthropic's CLAUDE AI for automating/framework/concept inspiration/Gemini 3 for debugging and testing
 - Healthcare community for HIPAA compliance guidelines
 
