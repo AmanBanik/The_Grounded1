@@ -94,7 +94,7 @@ Eight lightweight Python modules handling operational tasks such as:
 
 ## 🚀 Quick Start
 ### 1. Fix `config.py`
-The config file given here is a template and not the exact one just rename the fine name from `config_template.py` to `config.py` within `The Grounded one/`
+The config file given here is a template and not the exact one just rename the file name from `config_template.py` to `config.py` within `The Grounded one/`
 ### 2. Install Dependencies
 ```bash
 pip install google-generativeai reportlab pillow
