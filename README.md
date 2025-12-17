@@ -126,7 +126,7 @@ python main.py
 ```bash
 python admin_cli.py
 ```
-Password: `hipaa_admin_2025` default set can be changes in `config.py`
+Password: `hipaa_admin_2025` default set can be changed in `config.py`
 
 ---
 
