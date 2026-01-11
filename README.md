@@ -38,7 +38,7 @@ The system uses a native Python implementation (no heavy frameworks) to maximize
 ```
 graph TD
     User[User / Admin] --> Main[main.py / admin_cli.py]
-    Main --> Root[Root Agent<br>(Gemini 2.0 Flash)]
+    Main --> Root[Root Agent(Gemini 2.0 Flash)]
 
     subgraph "The Safety Layer"
     Filter[Filter Agent(Gemini 2.5 Pro)]
